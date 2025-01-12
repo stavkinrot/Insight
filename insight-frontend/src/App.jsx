@@ -3,7 +3,7 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { Container, TextField, Button, Typography, Box, List, ListItem, ListItemText, Switch, FormControlLabel, Slider } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import './index.css'; // Ensure this file is imported to apply Tailwind CSS
+import './App.css'; // Ensure this file is imported to apply the styles
 
 const theme = createTheme({
   palette: {
@@ -64,10 +64,7 @@ function App() {
                 body: JSON.stringify({ content: note, date: new Date().toISOString().split('T')[0] }),
             });
 
-            console.log('Response status:', response.status);
             const data = await response.json();
-            console.log('Response data:', data);
-
             setMessage(data.message);
             setMeditationDates([...meditationDates, new Date().toISOString().split('T')[0]]);
         } catch (error) {
@@ -121,18 +118,11 @@ function App() {
         return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
     };
 
-    const tileContent = ({ date, view }) => {
-        if (view === 'month' && meditationDates.includes(date.toISOString().split('T')[0])) {
-            return <div className="dot"></div>;
-        }
-    };
-
-    const handleDateClick = async (date) => {
+    const handleDateChange = async (date) => {
         setSelectedDate(date);
         try {
             const response = await fetch(`http://localhost:5000/api/notes?date=${date.toISOString().split('T')[0]}`);
             const data = await response.json();
-            console.log('Notes for selected date:', data.notes);
             setNotesForSelectedDate(data.notes);
         } catch (error) {
             console.error('Error fetching notes for selected date:', error);
@@ -141,26 +131,21 @@ function App() {
 
     return (
         <ThemeProvider theme={theme}>
-            <Container>
-                <Typography variant="h2" gutterBottom>Meditation App</Typography>
-                
-                <Calendar
-                    tileContent={tileContent}
-                    onClickDay={handleDateClick}
-                    className="mb-4"
-                />
+            <Container className="app-container">
+                <Typography variant="h2" className="heading">
+                    Meditation App
+                </Typography>
 
-                {!showNoteForm ? (
-                    <Box mt={4}>
-                        <Typography variant="h4">Timer</Typography>
+                <Box className="inline-container">
+                    <Box className="sliders-container">
+                        <Typography variant="h5" gutterBottom>
+                            Timer
+                        </Typography>
                         <Typography gutterBottom>Set time in minutes</Typography>
                         <Slider
                             value={time}
                             onChange={(e, newValue) => setTime(newValue)}
-                            aria-labelledby="time-slider"
                             valueLabelDisplay="auto"
-                            step={1}
-                            marks
                             min={1}
                             max={120}
                         />
@@ -168,10 +153,7 @@ function App() {
                         <Slider
                             value={countdown}
                             onChange={(e, newValue) => setCountdown(newValue)}
-                            aria-labelledby="countdown-slider"
                             valueLabelDisplay="auto"
-                            step={1}
-                            marks
                             min={0}
                             max={60}
                             disabled={!useCountdown}
@@ -188,12 +170,42 @@ function App() {
                             control={<Switch checked={endGong} onChange={(e) => setEndGong(e.target.checked)} />}
                             label="End Gong"
                         />
-                        <Button variant="contained" color="primary" onClick={startTimer} disabled={isRunning}>Start Timer</Button>
-                        <Button variant="contained" color="secondary" onClick={stopTimer} disabled={!isRunning} sx={{ ml: 2 }}>Stop Timer</Button>
-                        <Typography variant="h6" mt={2}>Remaining Time: {formatTime(remainingTime)}</Typography>
+                        <Box className="button-container">
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={startTimer}
+                                className="button"
+                                disabled={isRunning}
+                            >
+                                Start Timer
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                color="secondary"
+                                onClick={stopTimer}
+                                className="button"
+                                disabled={!isRunning}
+                            >
+                                Stop Timer
+                            </Button>
+                        </Box>
+                        <Typography mt={2}>Remaining Time: {formatTime(remainingTime)}</Typography>
+                    </Box>
+
+                    <Calendar
+                        className="calendar"
+                        value={selectedDate}
+                        onChange={handleDateChange}
+                    />
+                </Box>
+
+                {!showNoteForm ? (
+                    <Box mt={4} textAlign="center">
+                        {/* Timer and Sliders are now inline with the Calendar */}
                     </Box>
                 ) : (
-                    <Box mt={4} component="form" onSubmit={handleSubmit}>
+                    <Box mt={4} component="form" onSubmit={handleSubmit} textAlign="center">
                         <TextField
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
@@ -202,14 +214,17 @@ function App() {
                             multiline
                             rows={4}
                             margin="normal"
+                            className="input"
                         />
-                        <Button type="submit" variant="contained" color="primary">Save Note</Button>
+                        <Button type="submit" variant="contained" color="primary" className="button">
+                            Save Note
+                        </Button>
                     </Box>
                 )}
                 {message && <Typography variant="body1" color="error" mt={2}>{message}</Typography>}
 
                 {selectedDate && (
-                    <Box mt={4}>
+                    <Box mt={4} textAlign="center">
                         <Typography variant="h4">Notes for {selectedDate.toDateString()}</Typography>
                         {notesForSelectedDate.length > 0 ? (
                             <List>
