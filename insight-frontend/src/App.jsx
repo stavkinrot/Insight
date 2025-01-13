@@ -149,7 +149,7 @@ function App() {
                             value={time}
                             onChange={(e, newValue) => setTime(newValue)}
                             valueLabelDisplay="auto"
-                            min={1}
+                            min={0.05}
                             max={120}
                         />
                         <Typography gutterBottom>Set countdown in seconds</Typography>
