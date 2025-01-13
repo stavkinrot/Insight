@@ -6,6 +6,9 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import './App.css'; // Ensure this file is imported to apply the styles
 
 const theme = createTheme({
+typography: {
+        fontFamily: 'Quicksand, Arial, sans-serif',
+      },
   palette: {
     primary: {
       main: '#8D7B68',
