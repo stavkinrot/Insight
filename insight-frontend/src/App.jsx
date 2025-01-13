@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { Container, TextField, Button, Typography, Box, List, ListItem, ListItemText, Switch, FormControlLabel, Slider } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import './App.css'; // Ensure this file is imported to apply the styles
@@ -195,12 +196,13 @@ function App() {
                         </Box>
                         <Typography mt={2}>Remaining Time: {formatTime(remainingTime)}</Typography>
                     </Box>
-
-                    <Calendar
-                        className="calendar"
-                        value={selectedDate}
-                        onChange={handleDateChange}
-                    />
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DateCalendar
+                            // className="calendar"
+                            // value={selectedDate}
+                            // onChange={handleDateChange}
+                        />
+                        </LocalizationProvider>
                 </Box>
 
                 {!showNoteForm ? (
