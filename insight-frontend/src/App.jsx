@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { Container, TextField, Button, Typography, Box, List, ListItem, ListItemText, Switch, FormControlLabel, Slider } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css'; // Import Quill's styling
 import './App.css'; // Ensure this file is imported to apply the styles
 
 const theme = createTheme({
@@ -27,10 +30,11 @@ typography: {
 });
 
 function App() {
-    const [note, setNote] = useState('');
+    const [noteContent, setNoteContent] = useState('');
+    const [title, setTitle] = useState('');
     const [message, setMessage] = useState('');
-    const [time, setTime] = useState(0); // Total time in minutes
-    const [countdown, setCountdown] = useState(0); // Countdown time in seconds
+    const [time, setTime] = useState(0);
+    const [countdown, setCountdown] = useState(0);
     const [remainingTime, setRemainingTime] = useState(0);
     const [isRunning, setIsRunning] = useState(false);
     const [showNoteForm, setShowNoteForm] = useState(false);
@@ -38,8 +42,11 @@ function App() {
     const [startGong, setStartGong] = useState(false);
     const [endGong, setEndGong] = useState(false);
     const [meditationDates, setMeditationDates] = useState([]);
+    const [expandedNoteId, setExpandedNoteId] = useState(null);
+    const [editingNoteId, setEditingNoteId] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
     const [notesForSelectedDate, setNotesForSelectedDate] = useState([]);
+
 
     useEffect(() => {
         // Fetch meditation dates from Firestore
@@ -58,19 +65,45 @@ function App() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+        const formattedDate = dayjs(selectedDate || new Date()).format('YYYY-MM-DD'); // Normalize date
         try {
-            const response = await fetch('http://localhost:5000/api/notes', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ content: note, date: new Date().toISOString().split('T')[0] }),
-            });
-
+            if (editingNoteId) {
+                const response = await fetch(`http://localhost:5000/api/notes/${editingNoteId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ title, content: noteContent }),
+                });
+    
+                const data = await response.json();
+                setMessage(data.message);
+    
+                // Update the note in local state
+                setNotesForSelectedDate(notesForSelectedDate.map(n => n.id === editingNoteId ? { ...n, title, content: noteContent } : n));
+            } else {
+                //Create new note
+                const response = await fetch('http://localhost:5000/api/notes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ title, content: noteContent, date: formattedDate }),
+                });
+    
             const data = await response.json();
             setMessage(data.message);
-            setMeditationDates([...meditationDates, new Date().toISOString().split('T')[0]]);
+
+            // Add the new note to local state
+            setNotesForSelectedDate([...notesForSelectedDate, { id: data.id, title, content: noteContent }]);
+            }
+
+            // Reset the form
+            setTitle('');
+            setNoteContent('');
+            setEditingNoteId(null);
+            setShowNoteForm(false);
+
         } catch (error) {
             console.error('Error saving note:', error);
             setMessage('Failed to save the note');
@@ -124,8 +157,10 @@ function App() {
 
     const handleDateChange = async (date) => {
         setSelectedDate(date);
+        
+        const formattedDate = dayjs(date).format('YYYY-MM-DD'); // Normalize date
         try {
-            const response = await fetch(`http://localhost:5000/api/notes?date=${date.toISOString().split('T')[0]}`);
+            const response = await fetch(`http://localhost:5000/api/notes?date=${formattedDate}`);
             const data = await response.json();
             setNotesForSelectedDate(data.notes);
         } catch (error) {
@@ -198,9 +233,9 @@ function App() {
                     </Box>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DateCalendar
-                            // className="calendar"
-                            // value={selectedDate}
-                            // onChange={handleDateChange}
+                            className="calendar"
+                            value={selectedDate}
+                            onChange={handleDateChange}
                         />
                         </LocalizationProvider>
                 </Box>
@@ -212,14 +247,17 @@ function App() {
                 ) : (
                     <Box mt={4} component="form" onSubmit={handleSubmit} textAlign="center">
                         <TextField
-                            value={note}
-                            onChange={(e) => setNote(e.target.value)}
-                            placeholder="Write your insights here..."
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Note Title"
                             fullWidth
-                            multiline
-                            rows={4}
                             margin="normal"
-                            className="input"
+                        />
+                        <ReactQuill
+                            theme="snow"
+                            value={noteContent}
+                            onChange={setNoteContent}
+                            placeholder="Write your note here..."
                         />
                         <Button type="submit" variant="contained" color="primary" className="button">
                             Save Note
@@ -230,20 +268,39 @@ function App() {
 
                 {selectedDate && (
                     <Box mt={4} textAlign="center">
-                        <Typography variant="h4">Notes for {selectedDate.toDateString()}</Typography>
+                        <Typography variant="h4">Notes for {dayjs(selectedDate).format('DD-MM-YYYY')}</Typography>
                         {notesForSelectedDate.length > 0 ? (
                             <List>
                                 {notesForSelectedDate.map((note, index) => (
                                     <ListItem key={index}>
-                                        <ListItemText primary={note.content} />
-                                    </ListItem>
-                                ))}
-                            </List>
-                        ) : (
-                            <Typography variant="body1">No notes for this date.</Typography>
-                        )}
+                                        <ListItemText
+                                         primary={note.title}
+                                         secondary={
+                                            <Button
+                                                variant="text"
+                                                color="primary"
+                                                onClick={() => setExpandedNoteId(expandedNoteId === note.id ? null : note.id)}
+                                                >
+                                            View Note
+                                            </Button>
+                                            }
+                                          />
+                                    {expandedNoteId === note.id && (
+                                        <Box mt={2}>
+                                            <Typography
+                                                component="div"
+                                                dangerouslySetInnerHTML={{ __html: note.content }}
+                                            />
+                                        </Box>
+                                    )}
+                                </ListItem>
+                            ))}
+                        </List>
+                    ) : (
+                        <Typography variant="body1">No notes for this date.</Typography>
+                    )}
                     </Box>
-                )}
+                    )}
             </Container>
         </ThemeProvider>
     );

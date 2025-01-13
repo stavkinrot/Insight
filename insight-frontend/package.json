@@ -21,7 +21,8 @@
     "react-circular-slider": "^1.0.0",
     "react-circular-slider-svg": "^0.3.0",
     "react-dom": "^18.3.1",
-    "react-number-format": "^5.4.3"
+    "react-number-format": "^5.4.3",
+    "react-quill": "^2.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
