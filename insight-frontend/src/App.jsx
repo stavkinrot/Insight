@@ -8,6 +8,10 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; // Import Quill's styling
 import './App.css'; // Ensure this file is imported to apply the styles
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const theme = createTheme({
 typography: {
@@ -168,6 +172,49 @@ function App() {
         }
     };
 
+    const renderDiary = () => {
+        const groupedNotes = meditationDates.reduce((acc, date) => {
+            acc[date] = notesForSelectedDate.filter(note => note.date === date);
+            return acc;
+        }, {});
+    
+        return Object.keys(groupedNotes).map(date => (
+            <Accordion key={date}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography>{date}</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                    <List>
+                        {groupedNotes[date].map(note => (
+                            <ListItem key={note.id}>
+                                <ListItemText
+                                    primary={note.title}
+                                    secondary={
+                                        <Box>
+                                            <Button
+                                                variant="text"
+                                                onClick={() => handleEdit(note)}
+                                            >
+                                                Edit
+                                            </Button>
+                                            <Button
+                                                variant="text"
+                                                color="secondary"
+                                                onClick={() => handleDelete(note.id)}
+                                            >
+                                                Delete
+                                            </Button>
+                                        </Box>
+                                    }
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                </AccordionDetails>
+            </Accordion>
+        ));
+    };
+
     return (
         <ThemeProvider theme={theme}>
             <Container className="app-container">
@@ -239,6 +286,11 @@ function App() {
                         />
                         </LocalizationProvider>
                 </Box>
+
+                <Box>
+                <Typography variant="h4">Diary</Typography>
+                {renderDiary()}
+            </Box>
 
                 {!showNoteForm ? (
                     <Box mt={4} textAlign="center">
