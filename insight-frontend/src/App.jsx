@@ -9,6 +9,8 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; // Import Quill's styling
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import './App.css'; 
 
 const theme = createTheme({
@@ -217,6 +219,16 @@ function App() {
     }
   };
 
+  const handleNextDay = () => {
+    const nextDay = dayjs(selectedDate).add(1, 'day');
+    handleDateChange(nextDay);
+  };
+
+  const handlePreviousDay = () => {
+    const previousDay = dayjs(selectedDate).subtract(1, 'day');
+    handleDateChange(previousDay);
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <Container className="app-container">
@@ -317,8 +329,20 @@ function App() {
         {message && <Typography variant="body1" color="error" mt={2}>{message}</Typography>}
 
         {selectedDate && (
-          <Paper elevation={3} style={{ backgroundColor: 'white', padding: '20px', marginTop: '20px' }}>
+          <Paper elevation={3} style={{ backgroundColor: 'white', padding: '20px', marginTop: '20px', position: 'relative' }}>
+            <IconButton
+              style={{ position: 'absolute', left: '30%', top: '20%', transform: 'translateY(-50%)' }}
+              onClick={handlePreviousDay}
+            >
+              <ArrowBackIcon />
+            </IconButton>
             <Typography variant="h4" style={{ fontSize: '2rem' }}>Notes for {dayjs(selectedDate).format('DD-MM-YYYY')}</Typography>
+            <IconButton
+              style={{ position: 'absolute', right: '30%', top: '20%', transform: 'translateY(-50%)' }}
+              onClick={handleNextDay}
+            >
+              <ArrowForwardIcon />
+            </IconButton>
             {notesForSelectedDate.length > 0 ? (
               <List>
                 {notesForSelectedDate.map((note, index) => (
@@ -328,7 +352,7 @@ function App() {
                         variant="text"
                         color="primary"
                         onClick={() => handleViewNote(note)}
-                        style={{ flexGrow: 1, textAlign: 'left', backgroundColor: '#f1f1f1' }}
+                        style={{ flexGrow: 1, textAlign: 'left' }}
                       >
                         {note.title}
                       </Button>
