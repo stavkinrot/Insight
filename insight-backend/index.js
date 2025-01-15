@@ -7,8 +7,8 @@ app.use(express.json());
 
 app.use(cors({
     origin: 'http://localhost:5173',
-    methods: 'GET,POST',
-    allowedHeaders: 'Content-Type'
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type']
 }));
 
 app.get('/', (req, res) => {
@@ -17,15 +17,15 @@ app.get('/', (req, res) => {
 
 // Endpoint to save a note
 app.post('/api/notes', async (req, res) => {
-    const { content, date } = req.body;
+    const { title, content, date } = req.body;
 
-    if (!content || !date) {
-        return res.status(400).send({ error: 'Content and date are required' });
+    if (!title || !content || !date) {
+        return res.status(400).send({ error: 'Title, content, and date are required' });
     }
 
     try {
         // Save to Firestore
-        const docRef = await db.collection('notes').add({ content, date });
+        const docRef = await db.collection('notes').add({ title, content, date });
         console.log('Note saved with ID:', docRef.id);
 
         // Respond to the client
@@ -33,6 +33,45 @@ app.post('/api/notes', async (req, res) => {
     } catch (error) {
         console.error('Error saving note:', error);
         res.status(500).send({ error: 'Failed to save note' });
+    }
+});
+
+// Endpoint to update a note
+app.put('/api/notes/:id', async (req, res) => {
+    const { id } = req.params;
+    const { title, content } = req.body;
+
+    if (!title || !content) {
+        return res.status(400).send({ error: 'Title and content are required' });
+    }
+
+    try {
+        // Update the note in Firestore
+        await db.collection('notes').doc(id).update({ title, content });
+        console.log('Note updated with ID:', id);
+
+        // Respond to the client
+        res.status(200).send({ message: 'Note updated successfully!' });
+    } catch (error) {
+        console.error('Error updating note:', error);
+        res.status(500).send({ error: 'Failed to update note' });
+    }
+});
+
+// Endpoint to delete a note
+app.delete('/api/notes/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Delete the note from Firestore
+        await db.collection('notes').doc(id).delete();
+        console.log('Note deleted with ID:', id);
+
+        // Respond to the client
+        res.status(200).send({ message: 'Note deleted successfully!' });
+    } catch (error) {
+        console.error('Error deleting note:', error);
+        res.status(500).send({ error: 'Failed to delete note' });
     }
 });
 
@@ -58,7 +97,7 @@ app.get('/api/notes', async (req, res) => {
 
     try {
         const snapshot = await db.collection('notes').where('date', '==', date).get();
-        const notes = snapshot.docs.map(doc => doc.data());
+        const notes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         console.log('Fetched notes for date:', date, notes);
         res.status(200).send({ notes });
     } catch (error) {
