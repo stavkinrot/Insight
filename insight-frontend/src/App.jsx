@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
-import { Container, TextField, Button, Typography, Box, List, ListItem, IconButton, Switch, FormControlLabel, Slider, Paper } from '@mui/material';
+import { DateCalendar, PickersDay, DayCalendarSkeleton } from '@mui/x-date-pickers'
+import { Container, TextField, Button, Typography, Box, List, ListItem, IconButton, Switch, FormControlLabel, Slider, Paper, Badge } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; // Import Quill's styling
@@ -229,6 +229,24 @@ function App() {
     handleDateChange(previousDay);
   };
 
+  function ServerDay(props) {
+    const { day, outsideCurrentMonth, ...other } = props;
+    const formattedDate = day.format('YYYY-MM-DD');
+    const hasMeditations = meditationDates.includes(formattedDate);
+  
+    return (
+      <Badge
+        key={formattedDate}
+        overlap="circular"
+        color="primary"
+        variant="dot"
+        invisible={!hasMeditations} // Show dot only if there are meditations
+      >
+        <PickersDay {...other} outsideCurrentMonth={outsideCurrentMonth} day={day} />
+      </Badge>
+    );
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <Container className="app-container">
@@ -297,6 +315,9 @@ function App() {
               className="calendar"
               value={selectedDate}
               onChange={handleDateChange}
+              slots={{
+                day: (dayProps) => <ServerDay {...dayProps} />,
+              }}
             />
           </LocalizationProvider>
         </Box>
