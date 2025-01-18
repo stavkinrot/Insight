@@ -1,11 +1,15 @@
-#root {
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-  background-color: #F3EEEA; /* Light beige background */
-  font-family: 'Roboto', sans-serif; /* Modern font */
+body, html, #root {
+  background-color: #f0e4db;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
 }
+
+* {
+  box-sizing: border-box;
+}
+
 
 .logo {
   height: 6em;
@@ -202,18 +206,4 @@
   display: flex;
   align-items: center;
   width: 100%;
-}
-
-.arrow-button {
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.left-arrow {
-  top: 50%;
-  left: 25%;
-}
-
-.right-arrow {
-  right: 25%;
 }

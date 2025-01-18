@@ -17,6 +17,18 @@ import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import Grid from '@mui/material/Grid2';
 import './App.css'; 
 
+// #f0e4db #8D7B68 #A4907C #C8B6A6 #F1DEC9 #f0e4db
+// #5865f2 #336aea #0a66c2 #1877f2 #dcf8f7 #f0e4db #C8B6A6
+ 
+
+
+
+
+
+
+
+
+
 const theme = createTheme({
   typography: {
     fontFamily: 'Quicksand, Arial, sans-serif',
@@ -26,7 +38,7 @@ const theme = createTheme({
       main: '#8D7B68',
     },
     secondary: {
-      main: '#A4907C',
+      main: '#A4907C', 
     },
     accent: {
       main: '#C8B6A6',
@@ -205,6 +217,12 @@ function App() {
     }
   };
 
+    const handleDiscardChanges = () => {
+      setEditingNoteId(null);
+      setEditingNoteContent('');
+      setEditingNoteTitle('');
+    };
+
   const startTimer = () => {
     setIsRunning(true);
     if (useCountdown && countdown > 0) {
@@ -314,13 +332,13 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <AppBar position="static">
+      <AppBar position="static" >
         <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }} align="left">
-            Insight
+          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }} align="left">
+            I N S I G H T
           </Typography>
           <Button color="inherit" onClick={handleMenuOpen}>
-          {isSmallScreen ? truncateEmail(user.email) : user.email}
+            {isSmallScreen ? truncateEmail(user.email) : user.email}
           </Button>
           <Menu
             anchorEl={anchorEl}
@@ -333,73 +351,79 @@ function App() {
         </Toolbar>
       </AppBar>
 
-      <Container>
-        <Typography variant={isSmallScreen ? 'h4' : 'h2'} align="center" gutterBottom>
+      <Container sx={{ minHeight: '100vh', width: '100', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
+        <Typography variant={isSmallScreen ? 'h4' : 'h2'} align="center" gutterBottom marginTop={4} sx={{ fontWeight: '400' }}>
           I N S I G H T
         </Typography>
 
-        <Grid container spacing={4} alignItems="flex-start">
+        <Grid container spacing={4} alignItems="center" justifyContent="center" sx={{ flexGrow: 1 }}>
           <Grid item xs={12} md={6}>
-            <Typography variant="h6" gutterBottom>
-              Meditation Timer
-            </Typography>
-            <Typography>Set time (minutes)</Typography>
-            <Slider
-              value={time}
-              onChange={(e, newValue) => setTime(newValue)}
-              valueLabelDisplay="auto"
-              min={0.05}
-              max={120}
-            />
-            <Typography>Set countdown (seconds)</Typography>
-            <Slider
-              value={countdown}
-              onChange={(e, newValue) => setCountdown(newValue)}
-              valueLabelDisplay="auto"
-              min={0}
-              max={60}
-              disabled={!useCountdown}
-            />
-            <FormControlLabel
-              control={<Switch checked={useCountdown} onChange={(e) => setUseCountdown(e.target.checked)} />}
-              label="Use Countdown"
-            />
-            <FormControlLabel
-              control={<Switch checked={startGong} onChange={(e) => setStartGong(e.target.checked)} disabled={!useCountdown} />}
-              label="Start Gong"
-            />
-            <FormControlLabel
-              control={<Switch checked={endGong} onChange={(e) => setEndGong(e.target.checked)} />}
-              label="End Gong"
-            />
-            <Box mt={2}>
-              <Button variant="contained" color="primary" fullWidth onClick={startTimer} disabled={isRunning}>
-                Start
-              </Button>
-              <Button variant="outlined" color="secondary" fullWidth sx={{ mt: 1 }} onClick={stopTimer} disabled={!isRunning}>
-                Stop
-              </Button>
+            <Box sx={{ p: 2, borderRadius: '8px', width: '100%', maxWidth: '500px' }}>
+              <Typography variant="h6" gutterBottom>
+                Meditation Timer
+              </Typography>
+              <Typography>Set time (minutes)</Typography>
+              <Slider
+                value={time}
+                onChange={(e, newValue) => setTime(newValue)}
+                valueLabelDisplay="auto"
+                min={0.05}
+                max={120}
+                sx={{ mb: 2 }}
+              />
+              <Typography>Set countdown (seconds)</Typography>
+              <Slider
+                value={countdown}
+                onChange={(e, newValue) => setCountdown(newValue)}
+                valueLabelDisplay="auto"
+                min={0}
+                max={60}
+                disabled={!useCountdown}
+                sx={{ mb: 2 }}
+              />
+              <FormControlLabel
+                control={<Switch checked={useCountdown} onChange={(e) => setUseCountdown(e.target.checked)} />}
+                label="Use Countdown"
+              />
+              <FormControlLabel
+                control={<Switch checked={startGong} onChange={(e) => setStartGong(e.target.checked)} disabled={!useCountdown} />}
+                label="Start Gong"
+              />
+              <FormControlLabel
+                control={<Switch checked={endGong} onChange={(e) => setEndGong(e.target.checked)} />}
+                label="End Gong"
+              />
+              <Box mt={2}>
+                <Button variant="contained" color="primary" fullWidth onClick={startTimer} disabled={isRunning} sx={{ mb: 1 }}>
+                  Start
+                </Button>
+                <Button variant="outlined" color="secondary" fullWidth onClick={stopTimer} disabled={!isRunning}>
+                  Stop
+                </Button>
+              </Box>
+              <Typography mt={2} align="center">
+                {useCountdown && remainingTime > 0 ? `Get yourself Comfy in: ${formatTime(remainingTime)}` : `Remaining Time: ${formatTime(remainingTime)}`}
+              </Typography>
             </Box>
-            <Typography mt={2}>
-              {useCountdown && remainingTime > 0 ? `Get yourself Comfy in: ${formatTime(remainingTime)}` : `Remaining Time: ${formatTime(remainingTime)}`}
-            </Typography>
           </Grid>
 
           <Grid item xs={12} md={6}>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DateCalendar
-                value={selectedDate}
-                onChange={handleDateChange}
-                slots={{
-                  day: (dayProps) => <ServerDay {...dayProps} />,
-                }}
-              />
-            </LocalizationProvider>
+            <Box sx={{ p: 2, borderRadius: '8px', width: '100%', maxWidth: '500px' }}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DateCalendar
+                  value={selectedDate}
+                  onChange={handleDateChange}
+                  slots={{
+                    day: (dayProps) => <ServerDay {...dayProps} />,
+                  }}
+                />
+              </LocalizationProvider>
+            </Box>
           </Grid>
         </Grid>
 
         {remainingTime === 0 && !isRunning && showNoteForm && (
-          <Box mt={4}>
+          <Box mt={4} sx={{ p: 2, border: '1px solid #ccc', borderRadius: '8px', width: '100%', maxWidth: '500px' }}>
             <Typography variant="h6" gutterBottom>
               Add a Note
             </Typography>
@@ -425,8 +449,8 @@ function App() {
         {message && <Typography variant="body1" color="error" mt={2}>{message}</Typography>}
 
         {selectedDate && (
-          <Paper elevation={3} className="note-paper">
-            <Box className="note-header">
+          <Paper elevation={3} className="note-paper" sx={{ mt: 4, p: 2, width: '100%', maxWidth: '800px' }}>
+            <Box className="note-header" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <IconButton className="arrow-button left-arrow" onClick={handlePreviousDay}>
                 <ArrowBackIcon />
               </IconButton>
@@ -439,7 +463,7 @@ function App() {
               <List>
                 {notesForSelectedDate.map((note, index) => (
                   <ListItem key={index} className="note-list-item">
-                    <Box className="note-box">
+                    <Box className="note-box" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                       <Button
                         variant="text"
                         color="primary"
@@ -448,12 +472,14 @@ function App() {
                       >
                         {note.title}
                       </Button>
-                      <IconButton onClick={() => handleEditNote(note)}>
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton onClick={() => handleDeleteNote(note.id)}>
-                        <DeleteIcon />
-                      </IconButton>
+                      <Box>
+                        <IconButton onClick={() => handleEditNote(note)}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton onClick={() => handleDeleteNote(note.id)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
                     </Box>
                     {expandedNoteId === note.id && (
                       <Box mt={2} width="100%">
@@ -480,14 +506,30 @@ function App() {
                           onChange={setEditingNoteContent}
                           placeholder="Edit your note here..."
                         />
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={handleSubmit}
-                          style={{ marginTop: '10px' }}
+                        <Box
+                          display="flex"
+                          justifyContent="flex-start"
+                          alignItems="center"
+                          mt={1}
+                          gap={1} // Add spacing between buttons
                         >
-                          Save Changes
-                        </Button>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleSubmit}
+                            sx={{ flexGrow: 0 }}
+                          >
+                            Save Changes
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            color="secondary"
+                            onClick={handleDiscardChanges}
+                            sx={{ flexGrow: 0 }}
+                          >
+                            Discard Changes
+                          </Button>
+                        </Box>
                       </Box>
                     )}
                   </ListItem>
