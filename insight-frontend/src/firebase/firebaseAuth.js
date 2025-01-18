@@ -3,6 +3,7 @@ import app from "./firebaseConfig";
 
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' }); // Force account selection
 
 // Google Sign-In
 export const signInWithGoogle = async () => {
@@ -12,6 +13,19 @@ export const signInWithGoogle = async () => {
     return result.user;
   } catch (error) {
     console.error("Google Sign-In Error:", error.message);
+    throw error;
+  }
+};
+
+// Google Sign-Up
+export const signUpWithGoogle = async () => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    console.log("Google Sign-Up Success:", result.user);
+    return result.user;
+  } catch (error) {
+    console.error("Google Sign-Up Error:", error.message);
+    throw error;
   }
 };
 
@@ -23,6 +37,7 @@ export const signUpWithEmail = async (email, password) => {
     return userCredential.user;
   } catch (error) {
     console.error("Sign-Up Error:", error.message);
+    throw error;
   }
 };
 
@@ -34,6 +49,7 @@ export const signInWithEmail = async (email, password) => {
     return userCredential.user;
   } catch (error) {
     console.error("Sign-In Error:", error.message);
+    throw error;
   }
 };
 
@@ -44,5 +60,6 @@ export const logOut = async () => {
     console.log("Sign-Out Success");
   } catch (error) {
     console.error("Sign-Out Error:", error.message);
+    throw error;
   }
 };

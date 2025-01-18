@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Button, TextField, Typography, Container, Box, Paper } from "@mui/material";
-import { signInWithGoogle, signUpWithEmail, signInWithEmail, logOut } from "../firebase/firebaseAuth";
+import { Button, TextField, Typography, Container, Box, Paper, Divider, Grid } from "@mui/material";
+import { signInWithGoogle, signUpWithGoogle, signUpWithEmail, signInWithEmail, logOut } from "../firebase/firebaseAuth";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { ThemeProvider } from '@mui/material/styles';
-import {Grid} from '@mui/material';
 import { theme } from '../App.jsx'; // Import the theme from App.jsx
+import SignUp from './SignUp'; // Import the SignUp component
 
 const Authentication = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null); // State to store the authenticated user
+  const [showSignUp, setShowSignUp] = useState(false); // State to control the SignUp component visibility
 
   // Monitor authentication state
   useEffect(() => {
@@ -21,10 +22,18 @@ const Authentication = () => {
     return () => unsubscribe(); // Cleanup subscription on unmount
   }, []);
 
+  const handleSignUpClick = () => {
+    setShowSignUp(true);
+  };
+
+  const handleSignInClick = () => {
+    setShowSignUp(false);
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <Container maxWidth="sm" sx={{ mt: 8 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
+        <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
           <Box
             sx={{
               display: "flex",
@@ -34,70 +43,82 @@ const Authentication = () => {
             }}
           >
             <Typography variant="h4" gutterBottom>
-              {user ? `Welcome, ${user.displayName || user.email}` : "Authentication"}
+              {user ? `Welcome, ${user.displayName || user.email}` : showSignUp ? "Sign Up" : "Sign In"}
             </Typography>
 
             {!user ? (
-              <form>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Email"
-                      variant="outlined"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
+              showSignUp ? (
+                <SignUp email={email} password={password} onSignInClick={handleSignInClick} />
+              ) : (
+                <form>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Email"
+                        variant="outlined"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        sx={{ mb: 2 }} // Add margin bottom
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Password"
+                        variant="outlined"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        sx={{ mb: 2 }} // Add margin bottom
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        onClick={() => signInWithEmail(email, password)}
+                        sx={{ mt: 2 }}
+                      >
+                        Sign In
+                      </Button>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Divider sx={{ my: 2 }}>or</Divider>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Button
+                        variant="contained"
+                        fullWidth
+                        onClick={signInWithGoogle}
+                        sx={{
+                          backgroundColor: '#4285F4',
+                          color: '#fff',
+                          '&:hover': {
+                            backgroundColor: '#357ae8',
+                          },
+                          textTransform: 'none',
+                        }}
+                      >
+                        Sign in with Google
+                      </Button>
+                    </Grid>
+                    <Grid item xs={12} sx={{ mt: 2 }}>
+                      <Typography variant="body2" align="center">
+                        Don't have an account?{" "}
+                        <Button
+                          variant="text"
+                          color="primary"
+                          onClick={handleSignUpClick}
+                        >
+                          Sign Up
+                        </Button>
+                      </Typography>
+                    </Grid>
                   </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Password"
-                      variant="outlined"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      fullWidth
-                      onClick={() => signUpWithEmail(email, password)}
-                    >
-                      Sign Up
-                    </Button>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Button
-                      variant="outlined"
-                      color="secondary"
-                      fullWidth
-                      onClick={() => signInWithEmail(email, password)}
-                    >
-                      Sign In
-                    </Button>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      onClick={signInWithGoogle}
-                      sx={{
-                        backgroundColor: '#4285F4',
-                        color: '#fff',
-                        '&:hover': {
-                          backgroundColor: '#357ae8',
-                        },
-                        textTransform: 'none',
-                      }}
-                    >
-                      Sign in with Google
-                    </Button>
-                  </Grid>
-                </Grid>
-              </form>
+                </form>
+              )
             ) : (
               <Box sx={{ textAlign: "center", mt: 2 }}>
                 <Button variant="outlined" color="primary" onClick={logOut}>
