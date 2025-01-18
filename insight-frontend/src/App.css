@@ -1,5 +1,5 @@
 #root {
-  max-width: 1280px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
@@ -88,6 +88,7 @@
   margin-bottom: 20px;
   background-color: rgba(255, 255, 255, 0.8); /* Transparent background */
   padding: 1rem;
+  width: 45%;
 }
 
 .inline-container {
@@ -107,7 +108,8 @@
 .button-container {
   display: flex;
   gap: 10px; /* Space between buttons */
-  margin-top: 10px;
+  margin-top: 20px;
+  justify-content: space-between;
 }
 
 .ql-editor {
@@ -118,4 +120,100 @@
 
 .ql-container {
   font-family: 'Quicksand', Arial, sans-serif;
+}
+
+.app-container {
+  margin-top: 20px;
+  padding: 20px;
+}
+
+.heading {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.note-paper {
+  background-color: white;
+  padding: 20px;
+  margin-top: 20px;
+  position: relative;
+}
+
+.note-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.note-heading {
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+
+
+.note-list-item {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.note-box {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.note-title-button {
+  flex-grow: 1;
+  text-align: left;
+}
+
+.note-content {
+  margin-top: 20px;
+  width: 100%;
+}
+
+.edit-note-container {
+  margin-top: 20px;
+  width: 100%;
+}
+
+.edit-note-button {
+  margin-top: 10px;
+}
+
+.note-heading {
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.note-list-item {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.note-box {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.arrow-button {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.left-arrow {
+  top: 50%;
+  left: 25%;
+}
+
+.right-arrow {
+  right: 25%;
 }

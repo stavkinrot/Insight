@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Authentication from "./components/Authentication.jsx";
+import Footer from "./components/footer.jsx";
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
@@ -261,9 +262,8 @@ function App() {
   function ServerDay(props) {
     const { day, outsideCurrentMonth, ...other } = props;
     const formattedDate = day.format('YYYY-MM-DD');
-    const hasMeditations = meditationDates.includes(formattedDate);
-    console.log('Day:', day, 'Meditation Dates', meditationDates, 'Has Meditations:', hasMeditations);
-  
+    const hasMeditations = meditationDates.some(date => dayjs(date).format('YYYY-MM-DD') === formattedDate);
+
     return (
       <Badge
         key={formattedDate}
@@ -278,16 +278,14 @@ function App() {
   }
 
   if (!user) {
-
     return <Authentication />;
-
   }
 
   return (
     <ThemeProvider theme={theme}>
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" sx={{ flexGrow: 1 }} align="left">
             Meditation App
           </Typography>
           <Button color="inherit" onClick={handleMenuOpen}>
@@ -370,7 +368,7 @@ function App() {
               value={selectedDate}
               onChange={handleDateChange}
               slots={{
-                day: (dayProps) => <ServerDay {...dayProps} />
+                day: (dayProps) => <ServerDay {...dayProps} />,
               }}
             />
           </LocalizationProvider>
@@ -404,30 +402,26 @@ function App() {
         {message && <Typography variant="body1" color="error" mt={2}>{message}</Typography>}
 
         {selectedDate && (
-          <Paper elevation={3} style={{ backgroundColor: 'white', padding: '20px', marginTop: '20px', position: 'relative' }}>
-            <IconButton
-              style={{ position: 'absolute', left: '30%', top: '20%', transform: 'translateY(-50%)' }}
-              onClick={handlePreviousDay}
-            >
-              <ArrowBackIcon />
-            </IconButton>
-            <Typography variant="h4" style={{ fontSize: '2rem' }}>Notes for {dayjs(selectedDate).format('DD-MM-YYYY')}</Typography>
-            <IconButton
-              style={{ position: 'absolute', right: '30%', top: '20%', transform: 'translateY(-50%)' }}
-              onClick={handleNextDay}
-            >
-              <ArrowForwardIcon />
-            </IconButton>
+          <Paper elevation={3} className="note-paper">
+            <Box className="note-header">
+              <IconButton className="arrow-button left-arrow" onClick={handlePreviousDay}>
+                <ArrowBackIcon />
+              </IconButton>
+              <Typography variant="h4" className="note-heading">Notes for {dayjs(selectedDate).format('DD-MM-YYYY')}</Typography>
+              <IconButton className="arrow-button right-arrow" onClick={handleNextDay}>
+                <ArrowForwardIcon />
+              </IconButton>
+            </Box>
             {notesForSelectedDate.length > 0 ? (
               <List>
                 {notesForSelectedDate.map((note, index) => (
-                  <ListItem key={index} style={{ display: 'flex', alignItems: 'center', flexDirection: 'column', alignItems: 'flex-start' }}>
-                    <Box style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <ListItem key={index} className="note-list-item">
+                    <Box className="note-box">
                       <Button
                         variant="text"
                         color="primary"
                         onClick={() => handleViewNote(note)}
-                        style={{ flexGrow: 1, textAlign: 'left' }}
+                        className="note-title-button"
                       >
                         {note.title}
                       </Button>
@@ -482,6 +476,7 @@ function App() {
           </Paper>
         )}
       </Container>
+      <Footer />
     </ThemeProvider>
   );
 }
