@@ -5,7 +5,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { DateCalendar, PickersDay } from '@mui/x-date-pickers';
-import { Container, TextField, Button, Typography, Box, List, ListItem, IconButton, Switch, FormControlLabel, Slider, Paper, Badge, AppBar, Toolbar, Menu, MenuItem } from '@mui/material';
+import { Container, TextField, Button, Typography, Box, List, ListItem, IconButton, Switch, FormControlLabel, Slider, Paper, Badge, AppBar, Toolbar, Menu, MenuItem, useMediaQuery } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; // Import Quill's styling
@@ -14,6 +14,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+import Grid from '@mui/material/Grid2';
 import './App.css'; 
 
 const theme = createTheme({
@@ -51,7 +52,6 @@ function App() {
   const [meditationDates, setMeditationDates] = useState([]);
   const [selectedDate, setSelectedDate] = useState(dayjs()); // Set initial date to current date
   const [notesForSelectedDate, setNotesForSelectedDate] = useState([]);
-  const [notes, setNotes] = useState({});
   const [expandedNoteId, setExpandedNoteId] = useState(null);
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [editingNoteContent, setEditingNoteContent] = useState('');
@@ -60,6 +60,8 @@ function App() {
   const quillRef = useRef(null);
   const [user, setUser] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
+
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     const auth = getAuth();
@@ -122,48 +124,71 @@ function App() {
 
   const handleDeleteNote = async (noteId) => {
     try {
-      await fetch(`http://localhost:5000/api/notes/${noteId}`, { method: 'DELETE' });
+      const response = await fetch(`http://localhost:5000/api/notes/${noteId}`, {
+      method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ uid: user.uid }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delete note');
+    }
+
       setNotesForSelectedDate(notesForSelectedDate.filter(note => note.id !== noteId));
       alert('Note deleted successfully.');
     } catch (error) {
       console.error('Error deleting note:', error);
+      alert(error.message || 'An error occurred while deleting the note.');
     }
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const formattedDate = dayjs(selectedDate || new Date()).format('YYYY-MM-DD'); // Normalize date
-    try {
-      if (editingNoteId) {
-        const response = await fetch(`http://localhost:5000/api/notes/${editingNoteId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ title: editingNoteTitle, content: editingNoteContent, uid: user.uid }),
-        });
+  e.preventDefault();
+  const formattedDate = dayjs(selectedDate || new Date()).format('YYYY-MM-DD'); // Normalize date
 
-        const data = await response.json();
-        setMessage(data.message);
+  // Set default values for title and content during creation or editing
+  const finalTitle = editingNoteId ? (editingNoteTitle?.trim() || "NULL") : (title?.trim() || "NULL");
+  const finalContent = editingNoteId ? (editingNoteContent?.trim() || "NULL") : (noteContent?.trim() || "NULL");
 
-        // Update the note in local state
-        setNotesForSelectedDate(notesForSelectedDate.map(n => n.id === editingNoteId ? { ...n, title: editingNoteTitle, content: editingNoteContent } : n));
-      } else {
-        // Create new note
-        const response = await fetch('http://localhost:5000/api/notes', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ title, content: noteContent, date: formattedDate, uid: user.uid }),
-        });
+  try {
+    if (editingNoteId) {
+      // Edit existing note
+      const response = await fetch(`http://localhost:5000/api/notes/${editingNoteId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: finalTitle, content: finalContent, uid: user.uid }),
+      });
 
-        const data = await response.json();
-        setMessage(data.message);
+      const data = await response.json();
+      setMessage(data.message);
 
-        // Add the new note to local state
-        setNotesForSelectedDate([...notesForSelectedDate, { id: data.id, title, content: noteContent }]);
-      }
+      // Update the note in local state
+      setNotesForSelectedDate(
+        notesForSelectedDate.map(n =>
+          n.id === editingNoteId ? { ...n, title: finalTitle, content: finalContent } : n
+        )
+      );
+    } else {
+      // Create new note
+      const response = await fetch('http://localhost:5000/api/notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: finalTitle, content: finalContent, date: formattedDate, uid: user.uid }),
+      });
+
+      const data = await response.json();
+      setMessage(data.message);
+
+      // Add the new note to the local state
+      setNotesForSelectedDate([...notesForSelectedDate, { id: data.id, title: finalTitle, content: finalContent, date: formattedDate }]);
+    }
 
       // Reset the form
       setTitle('');
@@ -285,33 +310,23 @@ function App() {
     <ThemeProvider theme={theme}>
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }} align="left">
-            Meditation App
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            Insight
           </Typography>
-          <Button color="inherit" onClick={handleMenuOpen}>
-            {user.email}
-          </Button>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-          >
-            <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
-          </Menu>
         </Toolbar>
       </AppBar>
-      <Container className="app-container">
-        <Typography variant="h2" className="heading">
-          Meditation App
+
+      <Container>
+        <Typography variant={isSmallScreen ? 'h4' : 'h2'} align="center" gutterBottom>
+          I N S I G H T
         </Typography>
 
-        <Box className="inline-container">
-          <Box className="sliders-container">
-            <Typography variant="h5" gutterBottom>
-              Timer
+        <Grid container spacing={4} alignItems="flex-start">
+          <Grid item xs={12} md={6}>
+            <Typography variant="h6" gutterBottom>
+              Meditation Timer
             </Typography>
-            <Typography gutterBottom>Set time in minutes</Typography>
+            <Typography>Set time (minutes)</Typography>
             <Slider
               value={time}
               onChange={(e, newValue) => setTime(newValue)}
@@ -319,7 +334,7 @@ function App() {
               min={0.05}
               max={120}
             />
-            <Typography gutterBottom>Set countdown in seconds</Typography>
+            <Typography>Set countdown (seconds)</Typography>
             <Slider
               value={countdown}
               onChange={(e, newValue) => setCountdown(newValue)}
@@ -340,65 +355,54 @@ function App() {
               control={<Switch checked={endGong} onChange={(e) => setEndGong(e.target.checked)} />}
               label="End Gong"
             />
-            <Box className="button-container">
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={startTimer}
-                className="button"
-                disabled={isRunning}
-              >
-                Start Timer
+            <Box mt={2}>
+              <Button variant="contained" color="primary" fullWidth onClick={startTimer} disabled={isRunning}>
+                Start
               </Button>
-              <Button
-                variant="outlined"
-                color="secondary"
-                onClick={stopTimer}
-                className="button"
-                disabled={!isRunning}
-              >
-                Stop Timer
+              <Button variant="outlined" color="secondary" fullWidth sx={{ mt: 1 }} onClick={stopTimer} disabled={!isRunning}>
+                Stop
               </Button>
             </Box>
             <Typography mt={2}>Remaining Time: {formatTime(remainingTime)}</Typography>
-          </Box>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DateCalendar
-              className="calendar"
-              value={selectedDate}
-              onChange={handleDateChange}
-              slots={{
-                day: (dayProps) => <ServerDay {...dayProps} />,
-              }}
-            />
-          </LocalizationProvider>
-        </Box>
+          </Grid>
 
-        {!showNoteForm ? (
-          <Box mt={4} textAlign="center">
-            {/* Timer and Sliders are now inline with the Calendar */}
-          </Box>
-        ) : (
-          <Box mt={4} component="form" onSubmit={handleSubmit} textAlign="center">
+          <Grid item xs={12} md={6}>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DateCalendar
+                value={selectedDate}
+                onChange={handleDateChange}
+                slots={{
+                  day: (dayProps) => <ServerDay {...dayProps} />,
+                }}
+              />
+            </LocalizationProvider>
+          </Grid>
+        </Grid>
+
+        {remainingTime === 0 && !isRunning && showNoteForm && (
+          <Box mt={4}>
+            <Typography variant="h6" gutterBottom>
+              Add a Note
+            </Typography>
             <TextField
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Note Title"
+              label="Note Title"
               fullWidth
               margin="normal"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
             />
             <ReactQuill
-              ref={quillRef}
               theme="snow"
               value={noteContent}
               onChange={setNoteContent}
               placeholder="Write your note here..."
             />
-            <Button type="submit" variant="contained" color="primary" className="button">
+            <Button variant="contained" color="primary" sx={{ mt: 2 }} onClick={handleSubmit}>
               Save Note
             </Button>
           </Box>
         )}
+
         {message && <Typography variant="body1" color="error" mt={2}>{message}</Typography>}
 
         {selectedDate && (
