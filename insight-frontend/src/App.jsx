@@ -5,7 +5,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { DateCalendar, PickersDay } from '@mui/x-date-pickers';
-import { Container, TextField, Button, Typography, Box, List, ListItem, IconButton, Switch, FormControlLabel, Slider, Paper, Badge, AppBar, Toolbar, Menu, MenuItem, useMediaQuery } from '@mui/material';
+import { Container, TextField, Button, Typography, Box, List, ListItem, IconButton, Switch, FormControlLabel, Slider, Paper, Badge, AppBar, Toolbar, Menu, MenuItem, useMediaQuery, CircularProgress} from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; // Import Quill's styling
@@ -29,7 +29,7 @@ import './App.css';
 
 
 
-const theme = createTheme({
+export const theme = createTheme({
   typography: {
     fontFamily: 'Quicksand, Arial, sans-serif',
   },
@@ -160,7 +160,7 @@ function App() {
   const handleSubmit = async (e) => {
   e.preventDefault();
   const formattedDate = dayjs(selectedDate || new Date()).format('YYYY-MM-DD'); // Normalize date
-
+  const currentDate = dayjs().format('YYYY-MM-DD');
   // Set default values for title and content during creation or editing
   const finalTitle = editingNoteId ? (editingNoteTitle?.trim() || "NULL") : (title?.trim() || "NULL");
   const finalContent = editingNoteId ? (editingNoteContent?.trim() || "NULL") : (noteContent?.trim() || "NULL");
@@ -192,7 +192,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ title: finalTitle, content: finalContent, date: formattedDate, uid: user.uid }),
+        body: JSON.stringify({ title: finalTitle, content: finalContent, date: currentDate, uid: user.uid }),
       });
 
       const data = await response.json();
@@ -332,24 +332,33 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <AppBar position="static" >
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }} align="left">
-            I N S I G H T
-          </Typography>
-          <Button color="inherit" onClick={handleMenuOpen}>
-            {isSmallScreen ? truncateEmail(user.email) : user.email}
-          </Button>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-          >
-            <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
-          </Menu>
-        </Toolbar>
-      </AppBar>
+      <AppBar position="static">
+  <Toolbar>
+    {/* Group INSIGHT and the logo together */}
+    <Box display="flex" alignItems="center" sx={{ flexGrow: 1 }}>
+      <Typography variant="h6" sx={{ fontWeight: 600, marginRight: '10px' }}>
+        I N S I G H T
+      </Typography>
+      <img
+        src="./public/White Logo.png"
+        alt="logo"
+        style={{ width: '40px', height: '40px', marginBottom: '5px' }}
+      />
+    </Box>
+    {/* Username on the right */}
+    <Button color="inherit" onClick={handleMenuOpen}>
+      {isSmallScreen ? truncateEmail(user.email) : user.email}
+    </Button>
+    <Menu
+      anchorEl={anchorEl}
+      open={Boolean(anchorEl)}
+      onClose={handleMenuClose}
+    >
+      <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
+      <MenuItem onClick={handleLogout}>Logout</MenuItem>
+    </Menu>
+  </Toolbar>
+</AppBar>
 
       <Container sx={{ minHeight: '100vh', width: '100', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
         <Typography variant={isSmallScreen ? 'h4' : 'h2'} align="center" gutterBottom marginTop={4} sx={{ fontWeight: '400' }}>
@@ -368,7 +377,7 @@ function App() {
                 onChange={(e, newValue) => setTime(newValue)}
                 valueLabelDisplay="auto"
                 min={0.05}
-                max={120}
+                max={90}
                 sx={{ mb: 2 }}
               />
               <Typography>Set countdown (seconds)</Typography>
@@ -401,14 +410,14 @@ function App() {
                   Stop
                 </Button>
               </Box>
-              <Typography mt={2} align="center">
+              <Typography variant="h6" align="center" mt={2}>
                 {useCountdown && remainingTime > 0 ? `Get yourself Comfy in: ${formatTime(remainingTime)}` : `Remaining Time: ${formatTime(remainingTime)}`}
               </Typography>
             </Box>
           </Grid>
 
           <Grid item xs={12} md={6}>
-            <Box sx={{ p: 2, borderRadius: '8px', width: '100%', maxWidth: '500px' }}>
+            <Box sx={{ p: 2, borderRadius: '8px', width: '100%', maxWidth: '600px' }}>
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateCalendar
                   value={selectedDate}
@@ -416,6 +425,7 @@ function App() {
                   slots={{
                     day: (dayProps) => <ServerDay {...dayProps} />,
                   }}
+                  sx={{ width: '100%', height: '100%' }}
                 />
               </LocalizationProvider>
             </Box>
