@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Authentication from "./components/Authentication.jsx";
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { DateCalendar, PickersDay, DayCalendarSkeleton } from '@mui/x-date-pickers'
-import { Container, TextField, Button, Typography, Box, List, ListItem, IconButton, Switch, FormControlLabel, Slider, Paper, Badge } from '@mui/material';
+import { DateCalendar, PickersDay } from '@mui/x-date-pickers';
+import { Container, TextField, Button, Typography, Box, List, ListItem, IconButton, Switch, FormControlLabel, Slider, Paper, Badge, AppBar, Toolbar, Menu, MenuItem } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; // Import Quill's styling
@@ -11,6 +12,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import './App.css'; 
 
 const theme = createTheme({
@@ -55,47 +57,55 @@ function App() {
   const [editingNoteTitle, setEditingNoteTitle] = useState('');
   const diaryRef = useRef(null);
   const quillRef = useRef(null);
+  const [user, setUser] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
 
   useEffect(() => {
-    // Fetch meditation dates from Firestore
-    const fetchMeditationDates = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/meditation-dates');
-        const data = await response.json();
-        setMeditationDates(data.dates);
-      } catch (error) {
-        console.error('Error fetching meditation dates:', error);
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user);
+      } else {
+        setUser(null);
       }
-    };
+    });
 
-    fetchMeditationDates();
+    return () => unsubscribe();
   }, []);
 
-  // Fetch notes for the selected date when the component mounts
   useEffect(() => {
-    const fetchNotesForDate = async (date) => {
-      const formattedDate = dayjs(date).format('YYYY-MM-DD'); // Normalize date
-      try {
-        const response = await fetch(`http://localhost:5000/api/notes?date=${formattedDate}`);
-        const data = await response.json();
-        setNotesForSelectedDate(data.notes);
-      } catch (error) {
-        console.error('Error fetching notes for selected date:', error);
-      }
-    };
+    if (user) {
+      fetchMeditationDates(user.uid);
+      fetchNotesForDate(selectedDate, user.uid);
+    }
+  }, [user, selectedDate]);
 
-    fetchNotesForDate(selectedDate);
-  }, [selectedDate]);
+  const fetchMeditationDates = async (uid) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/meditation-dates?uid=${uid}`);
+      const data = await response.json();
+      console.log('Fetched meditation dates:', data.dates);
+      setMeditationDates(data.dates);
+    } catch (error) {
+      console.error('Error fetching meditation dates:', error);
+    }
+  };
 
-  const handleDateChange = async (date) => {
-    setSelectedDate(date);
+  const fetchNotesForDate = async (date, uid) => {
     const formattedDate = dayjs(date).format('YYYY-MM-DD'); // Normalize date
     try {
-      const response = await fetch(`http://localhost:5000/api/notes?date=${formattedDate}`);
+      const response = await fetch(`http://localhost:5000/api/notes?date=${formattedDate}&uid=${uid}`);
       const data = await response.json();
       setNotesForSelectedDate(data.notes);
     } catch (error) {
       console.error('Error fetching notes for selected date:', error);
+    }
+  };
+
+  const handleDateChange = async (date) => {
+    setSelectedDate(date);
+    if (user) {
+      fetchNotesForDate(date, user.uid);
     }
   };
 
@@ -129,7 +139,7 @@ function App() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ title: editingNoteTitle, content: editingNoteContent }),
+          body: JSON.stringify({ title: editingNoteTitle, content: editingNoteContent, uid: user.uid }),
         });
 
         const data = await response.json();
@@ -144,7 +154,7 @@ function App() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ title, content: noteContent, date: formattedDate }),
+          body: JSON.stringify({ title, content: noteContent, date: formattedDate, uid: user.uid }),
         });
 
         const data = await response.json();
@@ -229,16 +239,37 @@ function App() {
     handleDateChange(previousDay);
   };
 
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    const auth = getAuth();
+    try {
+      await signOut(auth);
+      setUser(null);
+      handleMenuClose();
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
   function ServerDay(props) {
     const { day, outsideCurrentMonth, ...other } = props;
     const formattedDate = day.format('YYYY-MM-DD');
-    const hasMeditations = meditationDates.includes(formattedDate);
+    const hasMeditations = meditationDates.some(date => dayjs(date).isSame(day, 'day'));
+  
+    console.log(`Date: ${formattedDate}, Has Meditations: ${hasMeditations}`);
   
     return (
       <Badge
         key={formattedDate}
         overlap="circular"
-        color="primary"
+        color="secondary"
         variant="dot"
         invisible={!hasMeditations} // Show dot only if there are meditations
       >
@@ -247,8 +278,32 @@ function App() {
     );
   }
 
+  if (!user) {
+
+    return <Authentication />;
+
+  }
+
   return (
     <ThemeProvider theme={theme}>
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            Meditation App
+          </Typography>
+          <Button color="inherit" onClick={handleMenuOpen}>
+            {user.email}
+          </Button>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+          >
+            <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
+            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+          </Menu>
+        </Toolbar>
+      </AppBar>
       <Container className="app-container">
         <Typography variant="h2" className="heading">
           Meditation App
@@ -316,7 +371,7 @@ function App() {
               value={selectedDate}
               onChange={handleDateChange}
               slots={{
-                day: (dayProps) => <ServerDay {...dayProps} />,
+                day: (dayProps) => <ServerDay {...dayProps} />
               }}
             />
           </LocalizationProvider>

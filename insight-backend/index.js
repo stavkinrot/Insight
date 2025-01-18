@@ -15,17 +15,74 @@ app.get('/', (req, res) => {
     res.send('Backend with Firebase is running!');
 });
 
+// Endpoint to fetch meditation dates
+app.get('/api/meditation-dates', async (req, res) => {
+    const { uid } = req.query;
+    
+    if (!uid) {
+        console.log('UID is missing in the request query'); // Log missing UID
+        return res.status(400).send({ error: 'UID is required' });
+    }
+
+    console.log(`Fetching meditation dates for UID: ${uid}`); // Log the received UID
+
+    try {
+        // Query the Firestore collection
+        const meditationDatesRef = db.collection('meditationDates').where('uid', '==', uid);
+        const snapshot = await meditationDatesRef.get();
+        
+        // Check if any documents are found
+        if (snapshot.empty) {
+            console.log(`No meditation dates found for UID: ${uid}`); // Log empty results
+            return res.json({ dates: [] });
+        }
+
+        // Extract and log the retrieved dates
+        const dates = snapshot.docs.map((doc) => {
+            const data = doc.data();
+            console.log(`Retrieved document data: ${JSON.stringify(data)}`); // Log each document data
+            return data.date;
+        });
+
+        // Log the formatted dates
+        console.log(`Formatted meditation dates for UID ${uid}:`, dates);
+
+        res.json({ dates });
+    } catch (error) {
+        console.error('Error fetching meditation dates:', error); // Log the error
+        res.status(500).send({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to fetch notes
+app.get('/api/notes', async (req, res) => {
+    const { date, uid } = req.query;
+    if (!date || !uid) {
+        return res.status(400).send({ error: 'Date and UID are required' });
+    }
+
+    try {
+        const notesRef = db.collection('notes').where('date', '==', date).where('uid', '==', uid);
+        const snapshot = await notesRef.get();
+        const notes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.json({ notes });
+    } catch (error) {
+        console.error('Error fetching notes:', error);
+        res.status(500).send({ error: 'Internal Server Error' });
+    }
+});
+
 // Endpoint to save a note
 app.post('/api/notes', async (req, res) => {
-    const { title, content, date } = req.body;
+    const { title, content, date, uid } = req.body;
 
-    if (!title || !content || !date) {
-        return res.status(400).send({ error: 'Title, content, and date are required' });
+    if (!title || !content || !date || !uid) {
+        return res.status(400).send({ error: 'Title, content, date, and UID are required' });
     }
 
     try {
         // Save to Firestore
-        const docRef = await db.collection('notes').add({ title, content, date });
+        const docRef = await db.collection('notes').add({ title, content, date, uid });
         console.log('Note saved with ID:', docRef.id);
 
         // Respond to the client
@@ -39,74 +96,51 @@ app.post('/api/notes', async (req, res) => {
 // Endpoint to update a note
 app.put('/api/notes/:id', async (req, res) => {
     const { id } = req.params;
-    const { title, content } = req.body;
+    const { title, content, uid } = req.body;
 
-    if (!title || !content) {
-        return res.status(400).send({ error: 'Title and content are required' });
+    if (!title || !content || !uid) {
+        return res.status(400).send({ error: 'Title, content, and UID are required' });
     }
 
     try {
-        // Update the note in Firestore
-        await db.collection('notes').doc(id).update({ title, content });
-        console.log('Note updated with ID:', id);
+        const noteRef = db.collection('notes').doc(id);
+        const note = await noteRef.get();
+        if (!note.exists || note.data().uid !== uid) {
+            return res.status(404).send({ error: 'Note not found or unauthorized' });
+        }
 
-        // Respond to the client
-        res.status(200).send({ message: 'Note updated successfully!' });
+        await noteRef.update({ title, content });
+        res.json({ message: 'Note updated successfully' });
     } catch (error) {
         console.error('Error updating note:', error);
-        res.status(500).send({ error: 'Failed to update note' });
+        res.status(500).send({ error: 'Internal Server Error' });
     }
 });
 
 // Endpoint to delete a note
 app.delete('/api/notes/:id', async (req, res) => {
     const { id } = req.params;
+    const { uid } = req.body;
+    if (!uid) {
+        return res.status(400).send({ error: 'UID is required' });
+    }
 
     try {
-        // Delete the note from Firestore
-        await db.collection('notes').doc(id).delete();
-        console.log('Note deleted with ID:', id);
+        const noteRef = db.collection('notes').doc(id);
+        const note = await noteRef.get();
+        if (!note.exists || note.data().uid !== uid) {
+            return res.status(404).send({ error: 'Note not found or unauthorized' });
+        }
 
-        // Respond to the client
-        res.status(200).send({ message: 'Note deleted successfully!' });
+        await noteRef.delete();
+        res.json({ message: 'Note deleted successfully' });
     } catch (error) {
         console.error('Error deleting note:', error);
-        res.status(500).send({ error: 'Failed to delete note' });
+        res.status(500).send({ error: 'Internal Server Error' });
     }
 });
 
-// Endpoint to fetch meditation dates
-app.get('/api/meditation-dates', async (req, res) => {
-    try {
-        const snapshot = await db.collection('notes').get();
-        const dates = snapshot.docs.map(doc => doc.data().date);
-        res.status(200).send({ dates });
-    } catch (error) {
-        console.error('Error fetching meditation dates:', error);
-        res.status(500).send({ error: 'Failed to fetch meditation dates' });
-    }
-});
-
-// Endpoint to fetch notes for a specific date
-app.get('/api/notes', async (req, res) => {
-    const { date } = req.query;
-
-    if (!date) {
-        return res.status(400).send({ error: 'Date is required' });
-    }
-
-    try {
-        const snapshot = await db.collection('notes').where('date', '==', date).get();
-        const notes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log('Fetched notes for date:', date, notes);
-        res.status(200).send({ notes });
-    } catch (error) {
-        console.error('Error fetching notes for date:', error);
-        res.status(500).send({ error: 'Failed to fetch notes for date' });
-    }
-});
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+const port = 5000;
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });
