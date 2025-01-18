@@ -185,6 +185,7 @@ function App() {
 
       const data = await response.json();
       setMessage(data.message);
+      setShowNoteForm(false);
 
       // Add the new note to the local state
       setNotesForSelectedDate([...notesForSelectedDate, { id: data.id, title: finalTitle, content: finalContent, date: formattedDate }]);
@@ -227,7 +228,7 @@ function App() {
     } else if (remainingTime === 0 && isRunning) {
       if (useCountdown && countdown > 0) {
         setRemainingTime(time * 60); // Start meditation timer after countdown
-        setCountdown(0);
+        setUseCountdown(false);
         if (startGong) playGongSound();
       } else {
         setIsRunning(false);
@@ -236,7 +237,7 @@ function App() {
       }
     }
     return () => clearInterval(timer);
-  }, [isRunning, remainingTime]);
+  }, [isRunning, remainingTime, useCountdown, countdown, time, startGong, endGong]);
 
   const playGongSound = () => {
     const audio = new Audio('/gong.mp3');
@@ -302,6 +303,11 @@ function App() {
     );
   }
 
+  const truncateEmail = (email) => {
+    const [username, domain] = email.split('@');
+    return username.length > 10 ? `${username.substring(0, 10)}...` : username;
+  };
+
   if (!user) {
     return <Authentication />;
   }
@@ -310,9 +316,20 @@ function App() {
     <ThemeProvider theme={theme}>
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" sx={{ flexGrow: 1 }} align="left">
             Insight
           </Typography>
+          <Button color="inherit" onClick={handleMenuOpen}>
+          {isSmallScreen ? truncateEmail(user.email) : user.email}
+          </Button>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+          >
+            <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
+            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
 
@@ -363,7 +380,9 @@ function App() {
                 Stop
               </Button>
             </Box>
-            <Typography mt={2}>Remaining Time: {formatTime(remainingTime)}</Typography>
+            <Typography mt={2}>
+              {useCountdown && remainingTime > 0 ? `Get yourself Comfy in: ${formatTime(remainingTime)}` : `Remaining Time: ${formatTime(remainingTime)}`}
+            </Typography>
           </Grid>
 
           <Grid item xs={12} md={6}>
