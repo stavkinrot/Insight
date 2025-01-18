@@ -323,7 +323,7 @@ function App() {
 
   const truncateEmail = (email) => {
     const [username, domain] = email.split('@');
-    return username.length > 10 ? `${username.substring(0, 10)}...` : username;
+    return username.length > 10 ? `${username.substring(0, 12)}...` : username;
   };
 
   if (!user) {

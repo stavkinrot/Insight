@@ -3,7 +3,6 @@ import app from "./firebaseConfig";
 
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({ prompt: 'select_account' }); // Force account selection
 
 // Google Sign-In
 export const signInWithGoogle = async () => {

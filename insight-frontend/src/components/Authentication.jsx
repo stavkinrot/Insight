@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button, TextField, Typography, Container, Box, Paper, Divider, Grid } from "@mui/material";
-import { signInWithGoogle, signUpWithGoogle, signUpWithEmail, signInWithEmail, logOut } from "../firebase/firebaseAuth";
+import { signInWithGoogle, signUpWithEmail, signInWithEmail, logOut } from "../firebase/firebaseAuth";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { ThemeProvider } from '@mui/material/styles';
 import { theme } from '../App.jsx'; // Import the theme from App.jsx
