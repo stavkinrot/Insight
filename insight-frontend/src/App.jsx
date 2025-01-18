@@ -261,9 +261,8 @@ function App() {
   function ServerDay(props) {
     const { day, outsideCurrentMonth, ...other } = props;
     const formattedDate = day.format('YYYY-MM-DD');
-    const hasMeditations = meditationDates.some(date => dayjs(date).isSame(day, 'day'));
-  
-    console.log(`Date: ${formattedDate}, Has Meditations: ${hasMeditations}`);
+    const hasMeditations = meditationDates.includes(formattedDate);
+    console.log('Day:', day, 'Meditation Dates', meditationDates, 'Has Meditations:', hasMeditations);
   
     return (
       <Badge

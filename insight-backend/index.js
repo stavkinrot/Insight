@@ -15,7 +15,7 @@ app.get('/', (req, res) => {
     res.send('Backend with Firebase is running!');
 });
 
-// Endpoint to fetch meditation dates
+// Endpoint to fetch meditation dates from notes
 app.get('/api/meditation-dates', async (req, res) => {
     const { uid } = req.query;
     
@@ -27,27 +27,21 @@ app.get('/api/meditation-dates', async (req, res) => {
     console.log(`Fetching meditation dates for UID: ${uid}`); // Log the received UID
 
     try {
-        // Query the Firestore collection
-        const meditationDatesRef = db.collection('meditationDates').where('uid', '==', uid);
-        const snapshot = await meditationDatesRef.get();
-        
+        // Query the notes collection to get unique dates for the given UID
+        const notesRef = db.collection('notes').where('uid', '==', uid);
+        const snapshot = await notesRef.get();
         // Check if any documents are found
         if (snapshot.empty) {
-            console.log(`No meditation dates found for UID: ${uid}`); // Log empty results
             return res.json({ dates: [] });
         }
-
         // Extract and log the retrieved dates
         const dates = snapshot.docs.map((doc) => {
             const data = doc.data();
-            console.log(`Retrieved document data: ${JSON.stringify(data)}`); // Log each document data
-            return data.date;
+            return data.date; // Assuming `date` is stored in the note data
         });
-
-        // Log the formatted dates
-        console.log(`Formatted meditation dates for UID ${uid}:`, dates);
-
-        res.json({ dates });
+        // Get unique dates from the list
+        const uniqueDates = [...new Set(dates)]; // Remove duplicate dates
+        res.json({ dates: uniqueDates });
     } catch (error) {
         console.error('Error fetching meditation dates:', error); // Log the error
         res.status(500).send({ error: 'Internal Server Error' });
