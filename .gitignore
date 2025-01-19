@@ -3,3 +3,41 @@ insight-backend/firebase
 node_modules
 firebase.js
 insight-frontend/src/sdfas.jsx
+directory_structure.txt
+
+# Node Modules
+node_modules/
+
+# Environment Variables
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Build Outputs
+dist/
+build/
+.vite/
+.vite-temp/
+
+# Firebase
+firebase.json
+firestore.indexes.json
+firestore.rules
+firebase-service-account.json
+
+# OS-Specific
+.DS_Store
+Thumbs.db
+
+# Editor Config
+.vscode/
+.idea/
+*.iml
+
+# Temp Files
+.cache/
+tmp/
