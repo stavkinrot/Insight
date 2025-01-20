@@ -13,6 +13,9 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import StartIcon from '@mui/icons-material/PlayArrow';
+import PauseIcon from '@mui/icons-material/Pause';
+import RestartIcon from '@mui/icons-material/Replay';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import Grid from '@mui/material/Grid2';
 import './App.css'; 
@@ -20,7 +23,8 @@ import './App.css';
 // #f0e4db #8D7B68 #A4907C #C8B6A6 #F1DEC9 #f0e4db
 // #5865f2 #336aea #0a66c2 #1877f2 #dcf8f7 #f0e4db #C8B6A6
  
-
+// #978e84 #66594a #d7d4d0 #c2bdb7 #ac9c8c #cbc3ba #a1907f #8a8175 
+//#8a8279
 
 
 
@@ -35,16 +39,18 @@ export const theme = createTheme({
   },
   palette: {
     primary: {
-      main: '#8D7B68',
+      main: '#66594a', // Base primary color
     },
     secondary: {
-      main: '#A4907C', 
-    },
-    accent: {
-      main: '#C8B6A6',
+      main: '#978e84', // Complementary secondary color
     },
     background: {
-      default: '#F1DEC9',
+      default: '#d7d4d0', // Background color
+      paper: '#ffff', // Paper color
+    },
+    text: {
+      primary: '#8a8175', // Main text color
+      secondary: '#a1907f', // Secondary text color
     },
   },
 });
@@ -57,6 +63,7 @@ function App() {
   const [countdown, setCountdown] = useState(0);
   const [remainingTime, setRemainingTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [useCountdown, setUseCountdown] = useState(false);
   const [startGong, setStartGong] = useState(false);
@@ -223,39 +230,53 @@ function App() {
       setEditingNoteTitle('');
     };
 
-  const startTimer = () => {
-    setIsRunning(true);
-    if (useCountdown && countdown > 0) {
-      setRemainingTime(countdown);
-    } else {
-      setRemainingTime(time * 60); // Convert minutes to seconds
-    }
-    setShowNoteForm(false);
-  };
-
-  const stopTimer = () => {
-    setIsRunning(false);
-  };
-
-  useEffect(() => {
-    let timer;
-    if (isRunning && remainingTime > 0) {
-      timer = setInterval(() => {
-        setRemainingTime((prevTime) => prevTime - 1);
-      }, 1000);
-    } else if (remainingTime === 0 && isRunning) {
-      if (useCountdown && countdown > 0) {
-        setRemainingTime(time * 60); // Start meditation timer after countdown
-        setUseCountdown(false);
-        if (startGong) playGongSound();
-      } else {
-        setIsRunning(false);
-        setShowNoteForm(true);
-        if (endGong) playGongSound();
+    const startTimer = () => {
+      // Start the timer only if it hasn't started yet or was paused
+      if (!hasStarted) {
+        setHasStarted(true);
+        setRemainingTime(useCountdown && countdown > 0 ? countdown : time * 60); // Initialize timer value
       }
-    }
-    return () => clearInterval(timer);
-  }, [isRunning, remainingTime, useCountdown, countdown, time, startGong, endGong]);
+      setIsRunning(true); // Start the timer
+    };
+    
+    const pauseTimer = () => {
+      setIsRunning(false); // Pause the timer
+    };
+    
+    const handleStartPause = () => {
+      if (remainingTime === 0) {
+        // If the timer has ended, initialize a new session
+        setHasStarted(false);
+        setRemainingTime(useCountdown && countdown > 0 ? countdown : time * 60);
+      }
+      isRunning ? pauseTimer() : startTimer(); // Toggle between start and pause
+    };
+    
+    const handleRestart = () => {
+      setIsRunning(false); // Stop the timer
+      setHasStarted(false); // Reset the session
+      setRemainingTime(useCountdown && countdown > 0 ? countdown : time * 60); // Reset time
+    };
+    
+    useEffect(() => {
+      let timer;
+      if (isRunning && remainingTime > 0) {
+        timer = setInterval(() => {
+          setRemainingTime((prevTime) => prevTime - 1);
+        }, 1000);
+      } else if (remainingTime === 0 && isRunning) {
+        if (useCountdown && countdown > 0) {
+          setRemainingTime(time * 60); // Start meditation timer after countdown
+          setUseCountdown(false);
+          if (startGong) playGongSound();
+        } else {
+          setIsRunning(false);
+          setShowNoteForm(true);
+          if (endGong) playGongSound();
+        }
+      }
+      return () => clearInterval(timer);
+    }, [isRunning, remainingTime, useCountdown, countdown, time, startGong, endGong]);
 
   const playGongSound = () => {
     const audio = new Audio('/gong.mp3');
@@ -307,16 +328,31 @@ function App() {
     const { day, outsideCurrentMonth, ...other } = props;
     const formattedDate = day.format('YYYY-MM-DD');
     const hasMeditations = meditationDates.some(date => dayjs(date).format('YYYY-MM-DD') === formattedDate);
-
+  
     return (
       <Badge
         key={formattedDate}
         overlap="circular"
-        color="secondary"
+        color="secondary"  // Adjust the badge color here
         variant="dot"
         invisible={!hasMeditations} // Show dot only if there are meditations
+        sx={{
+          '.MuiBadge-dot': {
+            backgroundColor: hasMeditations ? 'secondary' : 'transparent', // Custom badge color
+          },
+        }}
       >
-        <PickersDay {...other} outsideCurrentMonth={outsideCurrentMonth} day={day} />
+        <PickersDay
+          {...other}
+          outsideCurrentMonth={outsideCurrentMonth}
+          day={day}
+          sx={{
+            backgroundColor: day.isSame(selectedDate, 'day') ? '#F1DEC9' : 'inherit', // Selected date color
+            '&:hover': {
+              backgroundColor: day.isSame(selectedDate, 'day') ? '#000000' : '#dad7d3', // Hover color
+            },
+          }}
+        />
       </Badge>
     );
   }
@@ -332,7 +368,7 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <AppBar position="static">
+      <AppBar position="static" color="primary">
   <Toolbar>
     {/* Group INSIGHT and the logo together */}
     <Box display="flex" alignItems="center" sx={{ flexGrow: 1 }}>
@@ -361,9 +397,29 @@ function App() {
 </AppBar>
 
       <Container sx={{ minHeight: '100vh', width: '100', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
-        <Typography variant={isSmallScreen ? 'h4' : 'h2'} align="center" gutterBottom marginTop={4} sx={{ fontWeight: '400' }}>
-          I N S I G H T
-        </Typography>
+      <Box 
+  display="flex" 
+  alignItems="center" 
+  justifyContent="center" 
+  mt={4} 
+  gap={2} // Adds spacing between the title and the logo
+>
+  <Typography 
+    variant={isSmallScreen ? 'h4' : 'h2'} 
+    align="center"
+    color="white" 
+    sx={{ fontWeight: 400,
+      color: isSmallScreen ? 'transparent' : "white"
+     }}
+  >
+    I N S I G H T
+  </Typography>
+    <img
+      src="./public/White Logo.png" // Update this path to your logo's actual location
+      alt="White Lotus Logo"
+      style={{ width: isSmallScreen ? '0px' : '100px', height: isSmallScreen ? '0px' : '100px' }}
+    />
+    </Box>
 
         <Grid container spacing={4} alignItems="center" justifyContent="center" sx={{ flexGrow: 1 }}>
           <Grid item xs={12} md={6}>
@@ -402,14 +458,31 @@ function App() {
                 control={<Switch checked={endGong} onChange={(e) => setEndGong(e.target.checked)} />}
                 label="End Gong"
               />
-              <Box mt={2}>
-                <Button variant="contained" color="primary" fullWidth onClick={startTimer} disabled={isRunning} sx={{ mb: 1 }}>
-                  Start
-                </Button>
-                <Button variant="outlined" color="secondary" fullWidth onClick={stopTimer} disabled={!isRunning}>
-                  Stop
-                </Button>
-              </Box>
+              <Container>
+        <Box display="flex" justifyContent="center" alignItems="center" flexDirection="column" mt={5}>
+          <Box display="flex" justifyContent="center" alignItems="center">
+            <Button
+                variant="contained"
+                color="primary"
+                startIcon={isRunning ? <PauseIcon /> : <StartIcon />}
+                onClick={handleStartPause}
+                sx={{ mr: 2 }}
+              >
+                {remainingTime === 0 || !hasStarted ? 'Start' : isRunning ? 'Pause' : 'Resume'}
+            </Button>
+
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<RestartIcon />}
+              onClick={handleRestart}
+              disabled={remainingTime === time * 60 || remainingTime === countdown}
+            >
+              Restart
+            </Button>
+          </Box>
+        </Box>
+      </Container>
               <Typography variant="h6" align="center" mt={2}>
                 {useCountdown && remainingTime > 0 ? `Get yourself Comfy in: ${formatTime(remainingTime)}` : `Remaining Time: ${formatTime(remainingTime)}`}
               </Typography>
@@ -546,7 +619,7 @@ function App() {
                 ))}
               </List>
             ) : (
-              <Typography variant="body1">No notes for this date.</Typography>
+              <Typography variant="body1" align="center">No notes for this date.</Typography>
             )}
           </Paper>
         )}
