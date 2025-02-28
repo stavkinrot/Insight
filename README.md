@@ -1,7 +1,10 @@
 # Insight – Meditation Diary  
 
 ## Overview  
-**Insight** is a meditation diary web app designed to help users log their meditation sessions, set timers, and track their progress. The app integrates Firebase authentication, a React-based UI, and interactive features such as note-taking and calendar-based tracking.  
+**Insight** is a meditation diary web app designed to help users log their meditation sessions, set timers, and track their progress. The app integrates Firebase authentication, a React-based UI, and interactive features such as note-taking and calendar-based tracking.
+
+## Demo  
+Watch the app in action: [Insight Demo](https://drive.google.com/file/d/1w5R6dxoqG4f4dDwiMdGbU5dd5pChehts/view?usp=drive_link)
 
 ## Features  
 - **User Authentication**: Sign in and sign out with Firebase authentication.  
